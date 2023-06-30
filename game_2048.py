@@ -12,7 +12,7 @@ import copy
 import tkinter as tk
 
 
-class GUI2048(object):
+class TkGUI2048(object):
     """
     top: D9D1E0
     back_page: B49FAC
@@ -96,8 +96,9 @@ class GUI2048(object):
         label_num_y_size_map = [label_num_y_siee, label_num_y_siee+1*label_num_size, label_num_y_siee+2*label_num_size, label_num_y_siee+3*label_num_size]
         num_color_map = {
             0: "#E9D4D1",
-            2: "#D8D7FF", 4: "#E5E0EA", 8: "#FBB4BA", 16: "#FF9B8B",
-            32: "#FF7261", 64: "#F3D8A9", 128: "#F7C679", 256: "#FF9B44", 512: "#FF7019", 1024: "#FF4001"
+            2: "#6580f4", 4: "#E5E0EA", 8: "#FBB4BA", 16: "#FF9B8B",
+            32: "#FF7261", 64: "#F3D8A9", 128: "#F7C679", 256: "#FF9B44", 512: "#FF7019", 1024: "#FF4001",
+            2048: "#ff0040", 4096: "#640034"
         }
 
         label_num_css_map = {
@@ -281,24 +282,11 @@ class Game2048(object):
         n_num = random.randint(1, 2)
         low_n_vals = [random.choices([2, 4], weights=[0.8, 0.6])[0] for i in range(1, n_num+1)]
         low_n_indexs = [random.choices(indexs)[0] for i in range(1, n_num+1)]
-        print(f"随机新增:{n_num}个数:{low_n_vals} , 放在方格位置：{low_n_indexs}")
+        # print(f"随机新增:{n_num}个数:{low_n_vals} , 放在方格位置：{low_n_indexs}")
         for i, val in enumerate(low_n_vals):
             self.all_seats[low_n_indexs[i]] = val
 
-    # def init_seat(self):
-    #     self.all_seats, self.temp_seats = self.temp_seats, [0 for i in range(16)]
-
-    def draw_2048(self):
-        os.system('cls')
-        r = 1
-        for i in range(1, 17):
-            if i % 4 == 0:
-                print(f"{str(r)}行:{self.all_seats[i-4:i]}")
-                r += 1
-        # self.init_seat()  # 画完方格后，重置容器
-
     def _init_game_2048(self):
-        print("最开始初始化:")
         self.all_seats = [self.default_val for i in range(16)]  # 改变后的
         self.gen_new_nums([i for i in range(16)])
 
@@ -349,26 +337,101 @@ class Game2048(object):
             self.gen_new_nums(zero_index_list)
             self.move_num += 1
 
+    def play_up(self):
+        self.play_caculate(self.up)
+
+    def play_down(self):
+        self.play_caculate(self.down)
+
+    def play_left(self):
+        self.play_caculate(self.left)
+
+    def play_right(self):
+        self.play_caculate(self.right)
+
+    def draw_2048(self):
+        """
+        绘制面板
+        :return:
+        """
+
+    def reset(self):
+        """
+        重置
+        :return:
+        """
+        pass
+
+    def quit(self):
+        """退出"""
+        print("== 退出 ==")
+        sys.exit(-1)
+
+    def play(self):
+        """
+        开始
+        :return:
+        """
+        pass
+
+
+class CmdGame2048(Game2048):
+
+    def __init__(self):
+        super(CmdGame2048, self).__init__()
+
+    def draw_2048(self):
+        os.system('cls')
+        r = 1
+        for i in range(1, 17):
+            if i % 4 == 0:
+                print(f"{str(r)}行:{self.all_seats[i-4:i]}")
+                r += 1
+
+    def play_caculate(self, direction_indexs):
+        super(CmdGame2048, self).play_caculate(direction_indexs)
+        self.draw_2048()
+
+    def play(self):
+        """
+        开始
+        :return:
+        """
+        self._init_game_2048()
+        self.draw_2048()
+        while True:
+            step = input(f"请输入命令（w-上、s-下、a-左、d-右、 r-重置、q-退出 ）:")
+            if step == 'w':
+                self.play_up()
+            elif step == 's':
+                self.play_down()
+            elif step == 'a':
+                self.play_left()
+            elif step == 'd':
+                self.play_right()
+            elif step == 'r':
+                self.reset()
+            elif step == 'q':
+                self.quit()
+            else:
+                print(f"输入命令【{step}】出错")
+            time.sleep(0.1)
+
+
+class GuiTkGame2048(Game2048):
+
+    def __init__(self):
+        super(GuiTkGame2048, self).__init__()
+
+    def draw_2048(self):
         if self.game_2048_play:
             self.cur_num = max(self.all_seats)  # 当前最大值
             self.game_2048_play.draw_records(cur_num=self.cur_num, move_num=self.move_num)
             self.game_2048_play.draw_game_num_page()
 
-    def play_up(self):
-        print("【向上移动】")
-        self.play_caculate(self.up)
-
-    def play_down(self):
-        print("【向下移动】")
-        self.play_caculate(self.down)
-
-    def play_left(self):
-        print("【向左移动】")
-        self.play_caculate(self.left)
-
-    def play_right(self):
-        print("【向右移动】")
-        self.play_caculate(self.right)
+    def play_caculate(self, direction_indexs):
+        super(GuiTkGame2048, self).play_caculate(direction_indexs)
+        self.draw_2048()
 
     def play_keybord(self, evt):
         # msg = f"您点击了{evt.char}, ASCII代码{evt.keycode}\n"
@@ -382,21 +445,6 @@ class Game2048(object):
         elif evt.keysym == 'Right':
             self.play_right()
 
-    def play_gui(self):
-        init_top = tk.Tk()
-        init_seats = [0, 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 4, 32, 64, 64, 0]  # 临时修改初始值
-        self._init_game_2048()
-        # self.all_seats = init_seats
-        self.cur_num = max(self.all_seats)  # 当前最大值
-        self.game_2048_play = GUI2048(top=init_top, seats=self.all_seats, max_num=2048, cur_num=self.cur_num, move_num=self.move_num,
-                                      play_keybord=self.play_keybord,
-                                      play_up=self.play_up, play_down=self.play_down,
-                                      play_left=self.play_left, play_right=self.play_right,
-                                      quit=self.quit,
-                                      reset=self.reset
-                                      )
-        self.game_2048_play.run()
-
     def reset(self):
         """
         重置
@@ -408,14 +456,25 @@ class Game2048(object):
             self.move_num = 0
             self.game_2048_play.draw_records(cur_num=self.cur_num, move_num=self.move_num)
             self.game_2048_play.draw_game_num_page(seats=self.all_seats)
-        print("【重置完成】")
 
-    def quit(self):
-        """退出"""
-        print("== 退出 ==")
-        sys.exit(-1)
+    def play(self):
+        init_top = tk.Tk()
+        self._init_game_2048()
+        # init_seats = [0, 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 4, 32, 64, 64, 0]  # 临时修改初始值
+        # self.all_seats = init_seats
+        self.cur_num = max(self.all_seats)  # 当前最大值
+        self.game_2048_play = TkGUI2048(top=init_top, seats=self.all_seats, max_num=2048, cur_num=self.cur_num, move_num=self.move_num,
+                                      play_keybord=self.play_keybord,
+                                      play_up=self.play_up, play_down=self.play_down,
+                                      play_left=self.play_left, play_right=self.play_right,
+                                      quit=self.quit,
+                                      reset=self.reset
+                                      )
+        self.game_2048_play.run()
 
 
 if __name__ == "__main__":
-    game_2048 = Game2048()
-    game_2048.play_gui()
+    # game_2048 = CmdGame2048()  # 命令行模式
+    game_2048 = GuiTkGame2048()  # tkinter实现的图形界面模式
+    game_2048.play()
+
