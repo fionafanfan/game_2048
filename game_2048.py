@@ -32,7 +32,7 @@ class TkGUI2048(object):
     字体 ； D3D5FE
     """
 
-    def __init__(self, top=None, seats=None, max_num=0, cur_num=0, move_num=0, play_keybord=None, play_up=None, play_down=None, play_left=None, play_right=None, quit=None, reset=None):
+    def __init__(self, top=None, seats=None, max_num=0, cur_num=0, move_num=0, play_keyboard=None, play_up=None, play_down=None, play_left=None, play_right=None, quit=None, reset=None):
         """
         This class configures and populates the toplevel window.
         top is the toplevel containing window.
@@ -44,7 +44,7 @@ class TkGUI2048(object):
         self.max_num = max_num
         self.cur_num = cur_num
         self.move_num = move_num
-        self.play_keybord = play_keybord
+        self.play_keyboard = play_keyboard
         self.play_up = play_up
         self.play_down = play_down
         self.play_left = play_left
@@ -58,6 +58,7 @@ class TkGUI2048(object):
 
         self.Label_max = None
         self.Label_cur = None
+        self.Label_move = None
 
         self.Button_up = None
         self.Button_down = None
@@ -66,11 +67,12 @@ class TkGUI2048(object):
 
         self.Button_exit = None
         self.Button_reset = None
+        self.Label_keyboard_event = None
 
         self.draw_game_root_page()
         self.draw_game_num_page()
         self.draw_command_button()
-        self.draw_keybord_label()
+        self.draw_keyboard_label()
         self.draw_records()
 
     def draw_game_root_page(self):
@@ -116,13 +118,12 @@ class TkGUI2048(object):
             background = num_color_map.get(self.seats[i])
             text = str(self.seats[i]) if self.seats[i] else ""
             self.Label_num.configure(activebackground="#ab5858", activeforeground="#000000",
-                                       anchor='w', background=background, compound='center',
-                                       border=1,
-                                       disabledforeground="#a3a3a3",
-                                       font="-family {High Tower Text} -size 36 -weight bold",
-                                       foreground="#000000",
-                                       relief="solid",
-                                       text=text)
+                                     anchor='w', background=background, compound='center',
+                                     border=1, disabledforeground="#a3a3a3",
+                                     font="-family {High Tower Text} -size 36 -weight bold",
+                                     foreground="#000000",
+                                     relief="solid",
+                                     text=text)
 
     def draw_command_button(self):
         self.Button_exit = tk.Button(self.top)
@@ -161,18 +162,17 @@ class TkGUI2048(object):
         self.Button_down = tk.Button(self.top)
         self.Button_down.place(x=470, y=250, height=28, width=49)
         self.Button_down.configure(activebackground="beige", activeforeground="black",
-                                    background="#b16363", compound='left', cursor="fleur",
-                                    foreground="#000000", highlightbackground="#d9d9d9",
-                                    highlightcolor="black", pady="0", text='''下''',
-                                   command=self.play_down
-                                    )
+                                   background="#b16363", compound='left', cursor="fleur",
+                                   foreground="#000000", highlightbackground="#d9d9d9",
+                                   highlightcolor="black", pady="0", text='''下''',
+                                   command=self.play_down)
 
         self.Button_left = tk.Button(self.top)
         self.Button_left.place(x=430, y=200, height=28, width=49)
         self.Button_left.configure(activebackground="beige", activeforeground="black",
-                                    background="#b16363", compound='left', cursor="fleur",
-                                    foreground="#000000", highlightbackground="#d9d9d9",
-                                    highlightcolor="black", pady="0", text='''左''',
+                                   background="#b16363", compound='left', cursor="fleur",
+                                   foreground="#000000", highlightbackground="#d9d9d9",
+                                   highlightcolor="black", pady="0", text='''左''',
                                    command=self.play_left
                                    )
 
@@ -185,23 +185,14 @@ class TkGUI2048(object):
                                     command=self.play_right
                                     )
 
-    def draw_keybord_label(self):
+    def draw_keyboard_label(self):
         """
         label邦健键盘事件，来控制移动方向
         """
-        self.Label_keybord_event = tk.Label(self.top)
-        # self.Label_keybord_event.place(x=430, y=10, height=33, width=80)
-        # self.Label_keybord_event.configure(anchor='w',
-        #                                    compound='left',
-        #                                     cursor="fleur",
-        #                                    highlightbackground="white",  # 设置为白色
-        #                                    highlightthickness=0  # 透明度不可见
-        #                                    )
-
-        self.Label_keybord_event.focus_set()
-        self.Label_keybord_event.pack()
-        self.Label_keybord_event.bind('<Key>', self.play_keybord)
-        pass
+        self.Label_keyboard_event = tk.Label(self.top)
+        self.Label_keyboard_event.focus_set()
+        self.Label_keyboard_event.pack()
+        self.Label_keyboard_event.bind('<Key>', self.play_keyboard)
 
     def draw_records(self, cur_num=0, move_num=-1):
         if cur_num:
@@ -224,8 +215,8 @@ class TkGUI2048(object):
         self.Label_move = tk.Label(self.top)
         self.Label_move.place(x=430, y=110, height=33, width=80)
         self.Label_move.configure(anchor='w', background="#b16363", compound='left',
-                                 cursor="fleur", disabledforeground="#a3a3a3",
-                                 foreground="#000000", text=f'''移动：{str(self.move_num)}''')
+                                  cursor="fleur", disabledforeground="#a3a3a3",
+                                  foreground="#000000", text=f'''移动：{str(self.move_num)}''')
 
     def run(self):
         self.top.mainloop()
@@ -239,10 +230,6 @@ class Game2048(object):
     【2、4、8、16、32、64、128、256、512、1024、2048】
     通过上下左右滑动，让最后界面上有的最大数越大，就会越有成就感，其实就是另一种有目标的消消乐，
     当界面的空格数越来越少，就越难滑动，最后没有空格为止，就划不动，代表游戏失败。
-    我用了2周的时间认真的玩了下， 后面能够比较有概率的玩到1024， 再往后，就没有达到过了，
-    到后面就很难玩动， 最佳战绩就是【1024、512、256、128、64、32、16、8、4、2】 数字都有，
-    但是它们合并不到一块去， 所以最后还是游戏结束掉了，所以想要通过仔细研究下算法， 将这个游戏玩通关掉。
-    顺便写一个简易的python版的2048。
 
     1行:[0, 1, 2, 3]
     2行:[4, 5, 6, 7]
@@ -332,7 +319,7 @@ class Game2048(object):
                     zero_index_list.append(line[i])
                 self.all_seats[line[i]] = new_line_val
 
-            # 变换前后局面上的值有变化，才能随机在剩余的空间中生成新的数值
+        # 变换前后局面上的值有变化，才能随机在剩余的空间中生成新的数值
         if self.all_seats != self.temp_seats:
             self.gen_new_nums(zero_index_list)
             self.move_num += 1
@@ -354,6 +341,7 @@ class Game2048(object):
         绘制面板
         :return:
         """
+        pass
 
     def reset(self):
         """
@@ -433,7 +421,7 @@ class GuiTkGame2048(Game2048):
         super(GuiTkGame2048, self).play_caculate(direction_indexs)
         self.draw_2048()
 
-    def play_keybord(self, evt):
+    def play_keyboard(self, evt):
         # msg = f"您点击了{evt.char}, ASCII代码{evt.keycode}\n"
         # msg += f"按键名称{evt.keysym}, 代码{evt.keysym_num}"
         if evt.keysym == 'Up':
@@ -463,13 +451,13 @@ class GuiTkGame2048(Game2048):
         # init_seats = [0, 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 4, 32, 64, 64, 0]  # 临时修改初始值
         # self.all_seats = init_seats
         self.cur_num = max(self.all_seats)  # 当前最大值
-        self.game_2048_play = TkGUI2048(top=init_top, seats=self.all_seats, max_num=2048, cur_num=self.cur_num, move_num=self.move_num,
-                                      play_keybord=self.play_keybord,
-                                      play_up=self.play_up, play_down=self.play_down,
-                                      play_left=self.play_left, play_right=self.play_right,
-                                      quit=self.quit,
-                                      reset=self.reset
-                                      )
+        self.game_2048_play = TkGUI2048(top=init_top, seats=self.all_seats,
+                                        max_num=2048, cur_num=self.cur_num, move_num=self.move_num,
+                                        play_keyboard=self.play_keyboard,
+                                        play_up=self.play_up, play_down=self.play_down,
+                                        play_left=self.play_left, play_right=self.play_right,
+                                        quit=self.quit, reset=self.reset)
+
         self.game_2048_play.run()
 
 
