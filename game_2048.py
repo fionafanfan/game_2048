@@ -32,7 +32,8 @@ class TkGUI2048(object):
     字体 ； D3D5FE
     """
 
-    def __init__(self, top=None, seats=None, max_num=0, cur_num=0, move_num=0, play_keyboard=None, play_up=None, play_down=None, play_left=None, play_right=None, quit=None, reset=None):
+    def __init__(self, top=None, seats=None, max_num=0, cur_num=0, move_num=0, play_keyboard=None, play_up=None,
+                 play_down=None, play_left=None, play_right=None, play_ai=None, quit=None, reset=None):
         """
         This class configures and populates the toplevel window.
         top is the toplevel containing window.
@@ -49,6 +50,7 @@ class TkGUI2048(object):
         self.play_down = play_down
         self.play_left = play_left
         self.play_right = play_right
+        self.play_ai = play_ai
 
         self.quit = quit
         self.reset = reset
@@ -64,6 +66,7 @@ class TkGUI2048(object):
         self.Button_down = None
         self.Button_left = None
         self.Button_right = None
+        self.Button_ai_play = None
 
         self.Button_exit = None
         self.Button_reset = None
@@ -76,7 +79,7 @@ class TkGUI2048(object):
         self.draw_records()
 
     def draw_game_root_page(self):
-        self.top.geometry("600x450+539+43")
+        self.top.geometry("650x450+539+43")
         self.top.minsize(120, 1)
         self.top.maxsize(3004, 1901)
         self.top.resizable(0, 0)
@@ -126,6 +129,17 @@ class TkGUI2048(object):
                                      text=text)
 
     def draw_command_button(self):
+        self.Button_ai_play = tk.Button(self.top)
+        self.Button_ai_play.place(x=580, y=370, height=28, width=49)
+        self.Button_ai_play.configure(activebackground="#793e3e", activeforeground="#793e3e",
+                                      background="#b16363", compound='left', disabledforeground="#a3a3a3",
+                                      foreground="#000000",
+                                      highlightbackground="#d9d9d9",
+                                      highlightcolor="black",
+                                      pady="0",
+                                      text='''AI Play''',
+                                      command=self.play_ai)
+
         self.Button_exit = tk.Button(self.top)
         self.Button_exit.place(x=510, y=370, height=28, width=49)
         self.Button_exit.configure(activebackground="#793e3e", activeforeground="#793e3e",
@@ -250,6 +264,12 @@ class Game2048(object):
     2|2|4|8-> 4|4|8|0
     2|2|4|4-> 4|8|0|0
     2|4|8|8-> 2|4|16|0
+
+    游戏终止条件判断：
+    [2, 8, 2, 8, 4, 16, 8, 2, 8, 64, 32, 8, 2, 4, 16, 4]
+    1、列表中的值全大于0
+    2、每每相邻的值不相等
+    3、同行或同列相邻值不等
     """
     def __init__(self):
         self.default_val = 0
@@ -263,6 +283,7 @@ class Game2048(object):
         self.game_2048_play = None
         self.cur_num = 0
         self.move_num = 0  # 有效的操作次数
+        self.play_ai_running = True  # 2048 AI状态
 
     def gen_new_nums(self, indexs):
         # 随机选取1-2个数， 赋值给1-2个空格位置
@@ -276,6 +297,25 @@ class Game2048(object):
     def _init_game_2048(self):
         self.all_seats = [self.default_val for i in range(16)]  # 改变后的
         self.gen_new_nums([i for i in range(16)])
+
+    def check_finish(self, seats):
+        is_finished = True
+        if not all(seats):
+            return False
+
+        set_seats = set(seats)
+        nums = np.reshape(np.array(seats), (4, 4))
+        for seat in set_seats:
+            indexs_tuple = np.where(nums == seat)
+            indexs = [(row, col) for row, col in zip(indexs_tuple[0].tolist(), indexs_tuple[1].tolist())]
+            # print(seat, indexs)
+
+            for item in indexs:
+                if (item[0], item[1] + 1) in indexs:
+                    return False
+                elif (item[0] + 1, item[1]) in indexs:
+                    return False
+        return is_finished
 
     def play_caculate(self, direction_indexs):
         new_lines_val_list = []
@@ -324,6 +364,66 @@ class Game2048(object):
             self.gen_new_nums(zero_index_list)
             self.move_num += 1
 
+    @staticmethod
+    def check_play_caculate(all_seats, direction_indexs):
+        new_lines_val_list = []
+        zero_index_list = []
+        temp_seats = copy.deepcopy(all_seats)
+        for n, line in enumerate(direction_indexs):
+            line_val_list = [all_seats[line[i]] for i in range(4) if all_seats[line[i]]]  # 当前局面的当前行或列所有值
+            new_line_val_list = []  # 每一行或每一列通过位移或计算后的值
+            if len(line_val_list) == 0 or len(line_val_list) == 1:
+                new_line_val_list = line_val_list
+            elif len(line_val_list) == 2:
+                if line_val_list[0] == line_val_list[1]:
+                    new_line_val_list = [sum(line_val_list)]
+                else:
+                    new_line_val_list = line_val_list
+            elif len(line_val_list) == 3:
+                if line_val_list[0] == line_val_list[1]:
+                    new_line_val_list = [sum(line_val_list[:2]), line_val_list[2]]
+                elif line_val_list[1] == line_val_list[2]:
+                    new_line_val_list = [line_val_list[0], sum(line_val_list[1:])]
+                else:
+                    new_line_val_list = line_val_list
+            elif len(line_val_list) == 4:
+                if line_val_list[0] == line_val_list[1]:
+                    new_line_val_list.append(sum([line_val_list[0], line_val_list[1]]))
+                    if line_val_list[2] == line_val_list[3]:
+                        new_line_val_list.append(sum([line_val_list[2], line_val_list[3]]))
+                    else:
+                        new_line_val_list.extend([line_val_list[2], line_val_list[3]])
+                elif line_val_list[1] == line_val_list[2]:
+                    new_line_val_list = [line_val_list[0], sum([line_val_list[1], line_val_list[2]]), line_val_list[3]]
+                elif line_val_list[2] == line_val_list[3]:
+                    new_line_val_list = [line_val_list[0], line_val_list[1], sum([line_val_list[2], line_val_list[3]])]
+                else:
+                    new_line_val_list = line_val_list
+
+            new_line_val_list.extend([0 for i in range(4 - len(new_line_val_list))])
+            new_lines_val_list.append(new_line_val_list)
+            for i, new_line_val in enumerate(new_line_val_list):
+                if not new_line_val:
+                    zero_index_list.append(line[i])
+                all_seats[line[i]] = new_line_val
+
+        # 变换前后局面上的值有变化，才能随机在剩余的空间中生成新的数值
+        if all_seats != temp_seats:
+            return len(zero_index_list)
+        else:
+            return 0
+
+    def check_direction(self, seats):
+        """
+        w, a, s, d
+        """
+        direction_indexs = {'w': self.up, 's': self.down, 'a': self.left, 'd': self.right}
+        directions = sorted([(direction, self.check_play_caculate(seats, indexs)) for direction, indexs in direction_indexs.items()],
+                            key=lambda x: x[1], reverse=True)
+        print(directions)
+        direction = directions[0][0]
+        return direction
+
     def play_up(self):
         self.play_caculate(self.up)
 
@@ -335,6 +435,13 @@ class Game2048(object):
 
     def play_right(self):
         self.play_caculate(self.right)
+
+    def play_ai(self):
+        """
+        ai自动玩2048
+        :return:
+        """
+        pass
 
     def draw_2048(self):
         """
@@ -367,18 +474,119 @@ class CmdGame2048(Game2048):
 
     def __init__(self):
         super(CmdGame2048, self).__init__()
+        self.col = 4
+        self.show_template = f"""begin{'*' * (self.col * 6)}
+%(board)s\033[0m
+{'*' * (self.col* 6)}end"""
+
+    @property
+    def color_map(self):
+        return {
+            0: '\033[37m',  # 白色
+            2: '\033[34m',  # 蓝色
+            4: '\033[32m',  # 绿色
+            8: '\033[36m',  # 青色
+            16: '\033[31m',  # 红色
+            32: '\033[35m',  # 紫色
+            64: '\033[33m',  # 黄色
+            128: '\033[90m',  # 灰色
+            256: '\033[94m',  # 亮蓝色
+            512: '\033[92m',  # 亮绿色
+            1024: '\033[96m',  # 亮青色
+            2048: '\033[91m',  # 亮红色
+            4096: '\033[95m',  # 亮紫色
+            8192: '\033[93m',  # 亮黄色
+        }
 
     def draw_2048(self):
+        cell_width = 9
         os.system('cls')
         r = 1
+        rows = []
         for i in range(1, 17):
             if i % 4 == 0:
-                print(f"{str(r)}行:{self.all_seats[i-4:i]}")
+                # print(f"{str(r)}行:{self.all_seats[i-4:i]}")
+                rows.append(''.join([(self.color_map[i] + str(i)).ljust(cell_width, ' ') for i in self.all_seats[i-4:i]]))
                 r += 1
+        rows = ['' * 5 + r for r in rows]
+        show_board = '\n'.join(rows)
+        print(self.show_template % {'board': show_board})
 
     def play_caculate(self, direction_indexs):
         super(CmdGame2048, self).play_caculate(direction_indexs)
         self.draw_2048()
+
+    def reset(self):
+        self.play_ai_running = False
+        self._init_game_2048()
+        self.cur_num = max(self.all_seats)  # 当前最大值
+        self.move_num = 0
+
+    def ai_one(self):
+        """
+        策略： 随机上下左右
+        :return:
+        """
+        count = 1
+        while True:
+            if not self.play_ai_running or count > 5001:
+                break
+            direction = random.choice(['w', 's', 'd', 'a'])
+            if direction == 'w':
+                self.play_up()
+            elif direction == 's':
+                self.play_down()
+            elif direction == 'a':
+                self.play_left()
+            elif direction == 'd':
+                self.play_right()
+            self.draw_2048()
+            if self.check_finish(self.all_seats):
+                print("-*- 游戏结束- * -")
+                break
+            count += 1
+            time.sleep(1)
+
+    def ai_two(self):
+        """
+        策略：
+          1、开局优先向下
+          2、 只要最下方还有空位，则优先向下
+          3、 如果能够合并， 则向左向右合并
+          4、 如果向下不能改变局面， 只能向上移动， 再向下移回来
+          5、重复上上面的操作
+        :return:
+        """
+        self.play_down()
+        self.draw_2048()
+
+        count = 1
+        while True:
+            if not self.play_ai_running or count > 5001:
+                break
+
+            direction = self.check_direction(self.all_seats)
+            if direction == 'w':
+                self.play_up()
+            elif direction == 's':
+                self.play_down()
+            elif direction == 'a':
+                self.play_left()
+            elif direction == 'd':
+                self.play_right()
+
+            self.draw_2048()
+            if self.check_finish(self.all_seats):
+                print("-*- 游戏结束- * -")
+                break
+            count += 1
+            time.sleep(1)
+
+    def play_ai(self):
+        self._init_game_2048()
+        self.draw_2048()
+        # self.ai_one()
+        self.ai_two()
 
     def play(self):
         """
@@ -403,6 +611,9 @@ class CmdGame2048(Game2048):
                 self.quit()
             else:
                 print(f"输入命令【{step}】出错")
+            if self.check_finish(self.all_seats):
+                print("-*- 游戏结束- * -")
+                break
             time.sleep(0.1)
 
 
@@ -438,6 +649,7 @@ class GuiTkGame2048(Game2048):
         重置
         :return:
         """
+        self.play_ai_running = False
         if self.game_2048_play:
             self._init_game_2048()
             self.cur_num = max(self.all_seats)  # 当前最大值
@@ -455,14 +667,15 @@ class GuiTkGame2048(Game2048):
                                         max_num=2048, cur_num=self.cur_num, move_num=self.move_num,
                                         play_keyboard=self.play_keyboard,
                                         play_up=self.play_up, play_down=self.play_down,
-                                        play_left=self.play_left, play_right=self.play_right,
+                                        play_left=self.play_left, play_right=self.play_right, play_ai=self.play_ai,
                                         quit=self.quit, reset=self.reset)
 
         self.game_2048_play.run()
 
 
 if __name__ == "__main__":
-    # game_2048 = CmdGame2048()  # 命令行模式
-    game_2048 = GuiTkGame2048()  # tkinter实现的图形界面模式
-    game_2048.play()
+    game_2048 = CmdGame2048()  # 命令行模式
+    # game_2048 = GuiTkGame2048()  # tkinter实现的图形界面模式
+    game_2048.play_ai()
+    # game_2048.play()
 
