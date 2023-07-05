@@ -11,6 +11,8 @@ import time
 import copy
 import tkinter as tk
 
+import numpy as np
+
 
 class TkGUI2048(object):
     """
@@ -284,6 +286,7 @@ class Game2048(object):
         self.cur_num = 0
         self.move_num = 0  # 有效的操作次数
         self.play_ai_running = True  # 2048 AI状态
+        self.last_direction = 's'  # 默认是向下， 最近的一次移动方向
 
     def gen_new_nums(self, indexs):
         # 随机选取1-2个数， 赋值给1-2个空格位置
@@ -365,7 +368,7 @@ class Game2048(object):
             self.move_num += 1
 
     @staticmethod
-    def check_play_caculate(all_seats, direction_indexs):
+    def check_play_caculate(all_seats, direction, direction_indexs):
         new_lines_val_list = []
         zero_index_list = []
         temp_seats = copy.deepcopy(all_seats)
@@ -408,20 +411,57 @@ class Game2048(object):
                 all_seats[line[i]] = new_line_val
 
         # 变换前后局面上的值有变化，才能随机在剩余的空间中生成新的数值
-        if all_seats != temp_seats:
-            return len(zero_index_list)
+        if not all_seats == temp_seats:
+            return {"zero_index_num": len(zero_index_list), "all_seats": all_seats, "max_num": max(all_seats), "direction": direction}
         else:
-            return 0
+            return {"zero_index_num": 0, "all_seats": all_seats,  "max_num": 0, "direction": direction}
+
+    def check_directions(self, seats):
+        direction_indexs = {'w': self.up, 's': self.down, 'a': self.left, 'd': self.right}
+
+        temp_directions = sorted(
+            [self.check_play_caculate(copy.deepcopy(seats), direction, indexs) for direction, indexs in
+             direction_indexs.items()],
+            key=lambda x: x['zero_index_num'], reverse=True)
+
+        max_direction_zero_num = max([d['zero_index_num'] for d in temp_directions])
+        max_direction_num = max([d['max_num'] for d in temp_directions])
+        directions = [data for data in temp_directions if
+                      data['zero_index_num'] == max_direction_zero_num and data['max_num'] == max_direction_num]
+
+        return directions
 
     def check_direction(self, seats):
         """
         w, a, s, d
         """
-        direction_indexs = {'w': self.up, 's': self.down, 'a': self.left, 'd': self.right}
-        directions = sorted([(direction, self.check_play_caculate(seats, indexs)) for direction, indexs in direction_indexs.items()],
-                            key=lambda x: x[1], reverse=True)
-        print(directions)
-        direction = directions[0][0]
+        # 第一级别
+        one_direction_datas = self.check_directions(seats)
+        one_directions = [data['direction'] for data in one_direction_datas]
+        temp_two_direction_datas = []
+
+        for direction, data in zip(one_directions, one_direction_datas):
+            two_max_zero_index_num = max(
+                [data['zero_index_num'] for data in self.check_directions(copy.deepcopy(data['all_seats']))])
+            temp_two_direction_datas.append({'direction': direction, 'zero_index_num': two_max_zero_index_num})
+
+        two_directions = sorted(temp_two_direction_datas, key=lambda x: x['zero_index_num'], reverse=True)
+        two_direction = two_directions[0].get('direction', '')
+
+        if two_direction in one_directions:
+            direction = two_direction
+        else:
+            if 's' in one_directions:
+                direction = 's'
+            elif 'a' in one_directions:
+                direction = 'a'
+            elif 'd' in one_directions:
+                direction = 'd'
+            else:
+                direction = 'w'
+
+        print(f"one_directions:{one_directions}  one_direction_datas: {one_direction_datas} two_direction_datas:{temp_two_direction_datas}, two_direction:{two_direction}  direction:{direction}")
+        self.last_direction = direction
         return direction
 
     def play_up(self):
@@ -564,7 +604,6 @@ class CmdGame2048(Game2048):
         while True:
             if not self.play_ai_running or count > 5001:
                 break
-
             direction = self.check_direction(self.all_seats)
             if direction == 'w':
                 self.play_up()
@@ -575,7 +614,7 @@ class CmdGame2048(Game2048):
             elif direction == 'd':
                 self.play_right()
 
-            self.draw_2048()
+            # self.draw_2048()
             if self.check_finish(self.all_seats):
                 print("-*- 游戏结束- * -")
                 break
