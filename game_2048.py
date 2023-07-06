@@ -9,6 +9,7 @@ import sys
 import random
 import time
 import copy
+from pprint import pprint
 import tkinter as tk
 
 import numpy as np
@@ -441,24 +442,33 @@ class Game2048(object):
         temp_two_direction_datas = []
 
         for direction, data in zip(one_directions, one_direction_datas):
-            two_max_zero_index_num = max(
-                [data['zero_index_num'] for data in self.check_directions(copy.deepcopy(data['all_seats']))])
-            temp_two_direction_datas.append({'direction': direction, 'zero_index_num': two_max_zero_index_num})
+            two_temp_directions = self.check_directions(copy.deepcopy(data['all_seats']))
+            two_max_zero_index_num = max([data['zero_index_num'] for data in two_temp_directions] + [0])
+            two_max_num = max([data['max_num'] for data in two_temp_directions] + [0])
+            temp_two_direction_datas.append({'direction': direction,
+                                             'zero_index_num': two_max_zero_index_num,
+                                             'max_num': two_max_num})
 
-        two_directions = sorted(temp_two_direction_datas, key=lambda x: x['zero_index_num'], reverse=True)
-        two_direction = two_directions[0].get('direction', '')
+        max_direction_zero_num = max([data['zero_index_num'] for data in temp_two_direction_datas] + [0])
+        max_direction_num = max([data['max_num'] for data in temp_two_direction_datas] + [0])
+        two_directions = [data['direction'] for data in temp_two_direction_datas if
+                      data['zero_index_num'] == max_direction_zero_num and data['max_num'] == max_direction_num]
+
+        if 's' in two_directions:
+            two_direction = 's'
+        elif 'a' in two_directions:
+            two_direction = 'a'
+        elif 'd' in two_directions:
+            two_direction = 'd'
+        elif 'w' in two_directions:
+            two_direction = 'w'
+        else:
+            two_direction = 's'
 
         if two_direction in one_directions:
             direction = two_direction
         else:
-            if 's' in one_directions:
-                direction = 's'
-            elif 'a' in one_directions:
-                direction = 'a'
-            elif 'd' in one_directions:
-                direction = 'd'
-            else:
-                direction = 'w'
+            direction = 's'
 
         print(f"one_directions:{one_directions}  one_direction_datas: {one_direction_datas} two_direction_datas:{temp_two_direction_datas}, two_direction:{two_direction}  direction:{direction}")
         self.last_direction = direction
@@ -715,6 +725,12 @@ class GuiTkGame2048(Game2048):
 if __name__ == "__main__":
     game_2048 = CmdGame2048()  # 命令行模式
     # game_2048 = GuiTkGame2048()  # tkinter实现的图形界面模式
-    game_2048.play_ai()
+    ret = []
+    for i in range(1, 6):
+        game_2048.play_ai()
+        ret.append(game_2048.all_seats)
+        print(f"--第{i}局结束--")
+    print("结果:")
+    pprint(ret)
     # game_2048.play()
 
