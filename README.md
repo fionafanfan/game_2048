@@ -13,10 +13,25 @@
     顺便写一个简易的python版的2048。
 
 界面展现方式：
-* cmd
-* tkinter(优点：python标准库，无需额外安装， 可以借助界面工具生成代码，再进行代码优化  缺点：界面写不漂亮，比较生硬)
-* wxpython （第三方库，需安装）
+* cmd （控制台）
+* tkinter(优点：python标准库，无需额外安装， 可以借助界面工具生成代码，再进行代码优化  缺点：界面写不漂亮，比较生硬
+文档：https://docs.python.org/zh-cn/3/library/tkinter.html)
+* wxpython （第三方库，需安装， 官网：https://www.wxpython.org/pages/overview/#hello-world）
+* PyQt5（第三方库， 需安装， 官网：https://www.riverbankcomputing.com/software/pyqt/）
 
+安装方式：
+```
+可以直接在控制台一个个安装：
+wxpython:
+pip install wxPython -i https://pypi.douban.com/simple 
+
+PyQt5:
+pip install PyQt5 -i https://pypi.douban.com/simple 
+pip install PyQt5-tools -i https://pypi.douban.com/simple 
+
+控制台批量安装：
+pip install -r requirements.txt -i https://pypi.douban.com/simple 
+```
 
 执行方式：
 下载代码到本地，可以直接通过代码运行， 也可以通过也可以通过 pyinstaller -Fw game_2048.py 打包成exe格式运行。
