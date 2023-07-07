@@ -30,8 +30,11 @@ pip install PyQt5 -i https://pypi.douban.com/simple
 pip install PyQt5-tools -i https://pypi.douban.com/simple 
 
 控制台批量安装：
-pip install -r requirements.txt -i https://pypi.douban.com/simple 
+pip install -r requirements.txt -i https://pypi.douban.com/simple
 ```
+pyqt5 designer工具 pycharm配置：
+
+![img.png](img.png) 
 
 执行方式：
 下载代码到本地，可以直接通过代码运行， 也可以通过也可以通过 pyinstaller -Fw game_2048.py 打包成exe格式运行。
