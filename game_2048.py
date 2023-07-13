@@ -97,6 +97,8 @@ class TkGUI2048(object):
         self.top.maxsize(3004, 1901)
         self.top.resizable(0, 0)
         self.top.title("2048")
+        # self.top.iconbitmap('2048.ico')  # 更改窗口图标, 需要一个ico类型位图参数作为窗口图标，.png.jpg等其他类型不能显示
+        self.top.tk.call('wm', 'iconphoto', self.top._w, tk.PhotoImage(file='2048.png'))  # 图片为.png格式
         self.top.configure(background="#FAF8EF")
 
     def draw_game_num_page(self, seats=None):
