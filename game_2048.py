@@ -11,16 +11,16 @@ import time
 import copy
 from pprint import pprint
 import tkinter as tk
-
 import numpy as np
+import threading
 
 
 class TkGUI2048(object):
     """
     top: D9D1E0
     back_page: B49FAC
-    0: E9D4D1
-    2: D8D7FF
+    0: CDC1B4
+    2: EEE4DA
     4: E5E0EA
     8: FBB4BA
     16: FF9B8B
@@ -30,6 +30,8 @@ class TkGUI2048(object):
     256:FF9B44
     512: FF7019
     1024:FF4001
+    2048: ff0040
+    4096: 640034
 
     重置： 9D99A8，
     字体 ； D3D5FE
@@ -81,13 +83,21 @@ class TkGUI2048(object):
         self.draw_keyboard_label()
         self.draw_records()
 
+    # 打包进线程（耗时的操作）
+    @staticmethod
+    def thread_it(func, *args):
+        t = threading.Thread(target=func, args=args)
+        t.setDaemon(True)  # 守护
+        t.start()  # 启动
+        # t.join()          # 阻塞--会卡死界面！
+
     def draw_game_root_page(self):
         self.top.geometry("650x450+539+43")
         self.top.minsize(120, 1)
         self.top.maxsize(3004, 1901)
         self.top.resizable(0, 0)
         self.top.title("2048")
-        self.top.configure(background="#D9D1E0")
+        self.top.configure(background="#FAF8EF")
 
     def draw_game_num_page(self, seats=None):
         if seats:
@@ -95,7 +105,7 @@ class TkGUI2048(object):
 
         self.Frame_game_root = tk.Frame(self.top)
         self.Frame_game_root.place(x=10, y=10, height=410, width=410)
-        self.Frame_game_root.configure(relief='groove', borderwidth="2", background="#B49FAC")
+        self.Frame_game_root.configure(relief='groove', borderwidth="0", background="#BBADA0")
 
         label_num_size = 90
         label_num_x_size = 10  # 横轴间隔10
@@ -103,8 +113,8 @@ class TkGUI2048(object):
         label_num_x_size_map = [label_num_x_size, label_num_x_size+1*label_num_size, label_num_x_size+2*label_num_size, label_num_x_size+3*label_num_size]
         label_num_y_size_map = [label_num_y_siee, label_num_y_siee+1*label_num_size, label_num_y_siee+2*label_num_size, label_num_y_siee+3*label_num_size]
         num_color_map = {
-            0: "#E9D4D1",
-            2: "#6580f4", 4: "#E5E0EA", 8: "#FBB4BA", 16: "#FF9B8B",
+            0: "#CDC1B4",
+            2: "#EEE4DA", 4: "#E5E0EA", 8: "#FBB4BA", 16: "#FF9B8B",
             32: "#FF7261", 64: "#F3D8A9", 128: "#F7C679", 256: "#FF9B44", 512: "#FF7019", 1024: "#FF4001",
             2048: "#ff0040", 4096: "#640034"
         }
@@ -141,7 +151,7 @@ class TkGUI2048(object):
                                       highlightcolor="black",
                                       pady="0",
                                       text='''AI Play''',
-                                      command=self.play_ai)
+                                      command=lambda: self.thread_it(self.play_ai))
 
         self.Button_exit = tk.Button(self.top)
         self.Button_exit.place(x=510, y=370, height=28, width=49)
@@ -173,7 +183,7 @@ class TkGUI2048(object):
                                  background="#b16363", compound='left', cursor="fleur",
                                  foreground="#000000", highlightbackground="#d9d9d9",
                                  highlightcolor="black", pady="0", text='''上''',
-                                 command=self.play_up
+                                 command=lambda: self.thread_it(self.play_up)
                                  )
 
         self.Button_down = tk.Button(self.top)
@@ -182,7 +192,7 @@ class TkGUI2048(object):
                                    background="#b16363", compound='left', cursor="fleur",
                                    foreground="#000000", highlightbackground="#d9d9d9",
                                    highlightcolor="black", pady="0", text='''下''',
-                                   command=self.play_down)
+                                   command=lambda: self.thread_it(self.play_down))
 
         self.Button_left = tk.Button(self.top)
         self.Button_left.place(x=430, y=200, height=28, width=49)
@@ -190,7 +200,7 @@ class TkGUI2048(object):
                                    background="#b16363", compound='left', cursor="fleur",
                                    foreground="#000000", highlightbackground="#d9d9d9",
                                    highlightcolor="black", pady="0", text='''左''',
-                                   command=self.play_left
+                                   command=lambda: self.thread_it(self.play_left)
                                    )
 
         self.Button_right = tk.Button(self.top)
@@ -199,7 +209,7 @@ class TkGUI2048(object):
                                     background="#b16363", compound='left', cursor="fleur",
                                     foreground="#000000", highlightbackground="#d9d9d9",
                                     highlightcolor="black", pady="0", text='''右''',
-                                    command=self.play_right
+                                    command=lambda: self.thread_it(self.play_right)
                                     )
 
     def draw_keyboard_label(self):
@@ -706,6 +716,71 @@ class GuiTkGame2048(Game2048):
             self.game_2048_play.draw_records(cur_num=self.cur_num, move_num=self.move_num)
             self.game_2048_play.draw_game_num_page(seats=self.all_seats)
 
+    def ai_one(self):
+        """
+        策略： 随机上下左右
+        :return:
+        """
+        count = 1
+        while True:
+            if not self.play_ai_running or count > 5001:
+                break
+            direction = random.choice(['w', 's', 'd', 'a'])
+            if direction == 'w':
+                self.play_up()
+            elif direction == 's':
+                self.play_down()
+            elif direction == 'a':
+                self.play_left()
+            elif direction == 'd':
+                self.play_right()
+            # self.draw_2048()
+            if self.check_finish(self.all_seats):
+                print("-*- 游戏结束- * -")
+                break
+            count += 1
+            time.sleep(1)
+
+    def ai_two(self):
+        """
+        策略：
+          1、开局优先向下
+          2、 只要最下方还有空位，则优先向下
+          3、 如果能够合并， 则向左向右合并
+          4、 如果向下不能改变局面， 只能向上移动， 再向下移回来
+          5、重复上上面的操作
+        :return:
+        """
+        self.play_down()
+        # self.draw_2048()
+
+        count = 1
+        while True:
+            if not self.play_ai_running or count > 5001:
+                break
+            direction = self.check_direction(self.all_seats)
+            if direction == 'w':
+                self.play_up()
+            elif direction == 's':
+                self.play_down()
+            elif direction == 'a':
+                self.play_left()
+            elif direction == 'd':
+                self.play_right()
+
+            # self.draw_2048()
+            if self.check_finish(self.all_seats):
+                print("-*- 游戏结束- * -")
+                break
+            count += 1
+            time.sleep(1)
+
+    def play_ai(self):
+        print("play ai")
+        # self._init_game_2048()
+        # self.draw_2048()
+        self.ai_two()
+
     def play(self):
         init_top = tk.Tk()
         self._init_game_2048()
@@ -723,14 +798,14 @@ class GuiTkGame2048(Game2048):
 
 
 if __name__ == "__main__":
-    game_2048 = CmdGame2048()  # 命令行模式
-    # game_2048 = GuiTkGame2048()  # tkinter实现的图形界面模式
-    ret = []
-    for i in range(1, 6):
-        game_2048.play_ai()
-        ret.append(game_2048.all_seats)
-        print(f"--第{i}局结束--")
-    print("结果:")
-    pprint(ret)
-    # game_2048.play()
+    # game_2048 = CmdGame2048()  # 命令行模式
+    game_2048 = GuiTkGame2048()  # tkinter实现的图形界面模式
+    # ret = []
+    # for i in range(1, 3):
+    #     game_2048.play_ai()
+    #     ret.append(game_2048.all_seats)
+    #     print(f"--第{i}局结束--")
+    # print("结果:")
+    # pprint(ret)
+    game_2048.play()
 
