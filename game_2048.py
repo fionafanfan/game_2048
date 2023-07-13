@@ -11,8 +11,15 @@ import time
 import copy
 from pprint import pprint
 import tkinter as tk
+import tkinter.messagebox as tk_msg_box
 import numpy as np
 import threading
+
+
+class PlayStatus(object):
+    COM = 0  # 正常
+    END = 1  # 游戏结束
+    WIN = 2  # win
 
 
 class TkGUI2048(object):
@@ -72,6 +79,9 @@ class TkGUI2048(object):
         t.setDaemon(True)  # 守护
         t.start()  # 启动
         # t.join()          # 阻塞--会卡死界面！
+
+    def draw_message_box(self, title='标题', message='内容'):
+        tk_msg_box.showinfo(title=title, message=message, parent=self.Frame_game_root)
 
     def draw_game_root_page(self):
         self.top.geometry("650x450+539+43")
@@ -292,6 +302,9 @@ class Game2048(object):
         self.cur_num = 0
         self.move_num = 0  # 有效的操作次数
         self.play_ai_running = True  # 2048 AI状态
+        self.play_status = PlayStatus.COM
+        self.play_win_num = 2048   # 阶段性胜利
+        self.play_win_times = 0  # 阶段性胜利次数
         self.last_direction = 's'  # 默认是向下， 最近的一次移动方向
 
     def gen_new_nums(self, indexs):
@@ -325,6 +338,15 @@ class Game2048(object):
                 elif (item[0] + 1, item[1]) in indexs:
                     return False
         return is_finished
+
+    def check_status(self, seats):
+        is_finished = self.check_finish(seats)
+        if is_finished:
+            self.play_status = PlayStatus.END
+
+        if max(self.all_seats) == self.play_win_num:
+            self.play_status = PlayStatus.WIN
+            self.play_win_times += 1
 
     def play_caculate(self, direction_indexs):
         new_lines_val_list = []
@@ -372,6 +394,7 @@ class Game2048(object):
         if self.all_seats != self.temp_seats:
             self.gen_new_nums(zero_index_list)
             self.move_num += 1
+        self.check_status(self.all_seats)
 
     @staticmethod
     def check_play_caculate(all_seats, direction, direction_indexs):
@@ -685,6 +708,12 @@ class GuiTkGame2048(Game2048):
     def play_caculate(self, direction_indexs):
         super(GuiTkGame2048, self).play_caculate(direction_indexs)
         self.draw_2048()
+        if self.play_status == PlayStatus.END:
+            self.game_2048_play.draw_message_box(title='提示', message='Game Over!')
+            print("-*- 游戏结束- * -")
+        elif self.play_status == PlayStatus.WIN and self.play_win_times <= 1:
+            self.game_2048_play.draw_message_box(title='提示', message=f'YOU WIN GETED {self.play_win_num}!!')
+            print('-*- 成功达到2048 -*=')
 
     def play_keyboard(self, evt):
         # msg = f"您点击了{evt.char}, ASCII代码{evt.keycode}\n"
@@ -730,7 +759,7 @@ class GuiTkGame2048(Game2048):
             elif direction == 'd':
                 self.play_right()
             # self.draw_2048()
-            if self.check_finish(self.all_seats):
+            if self.play_status == PlayStatus.END:
                 print("-*- 游戏结束- * -")
                 break
             count += 1
@@ -763,10 +792,10 @@ class GuiTkGame2048(Game2048):
             elif direction == 'd':
                 self.play_right()
 
-            # self.draw_2048()
-            if self.check_finish(self.all_seats):
+            if self.play_status == PlayStatus.END:
                 print("-*- 游戏结束- * -")
                 break
+
             count += 1
             time.sleep(1)
 
