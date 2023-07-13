@@ -17,26 +17,8 @@ import threading
 
 class TkGUI2048(object):
     """
-    top: D9D1E0
-    back_page: B49FAC
-    0: CDC1B4
-    2: EEE4DA
-    4: E5E0EA
-    8: FBB4BA
-    16: FF9B8B
-    32: FF7261
-    64: F3D8A9
-    128: F7C679
-    256:FF9B44
-    512: FF7019
-    1024:FF4001
-    2048: ff0040
-    4096: 640034
-
-    重置： 9D99A8，
-    字体 ； D3D5FE
+    tk gui
     """
-
     def __init__(self, top=None, seats=None, max_num=0, cur_num=0, move_num=0, play_keyboard=None, play_up=None,
                  play_down=None, play_left=None, play_right=None, play_ai=None, quit=None, reset=None):
         """
@@ -120,6 +102,8 @@ class TkGUI2048(object):
             32: "#FF7261", 64: "#F3D8A9", 128: "#F7C679", 256: "#FF9B44", 512: "#FF7019", 1024: "#FF4001",
             2048: "#ff0040", 4096: "#640034"
         }
+        text_color_map = {"add_num": "#663300", "cal_num": "#FFFFFF", "zero_num": "#FFFFFF"}
+        text_default_color = "#FFFFFF"
 
         label_num_css_map = {
             0: {"x": label_num_x_size_map[0], "y": label_num_y_size_map[0]}, 1: {"x": label_num_x_size_map[1], "y": label_num_y_size_map[0]}, 2: {"x": label_num_x_size_map[2], "y": label_num_y_size_map[0]}, 3: {"x": label_num_x_size_map[3], "y": label_num_y_size_map[0]},
@@ -135,20 +119,27 @@ class TkGUI2048(object):
 
             background = num_color_map.get(self.seats[i])
             text = str(self.seats[i]) if self.seats[i] else ""
+            if not text:
+                text_color_type = "zero_num"
+            else:
+                text_color_type = "cal_num" if self.seats[i] > 4 else "add_num"
+            text_color = text_color_map.get(text_color_type, text_default_color)
             self.Label_num.configure(activebackground="#ab5858", activeforeground="#000000",
                                      anchor='w', background=background, compound='center',
                                      border=1, disabledforeground="#a3a3a3",
                                      font="-family {High Tower Text} -size 36 -weight bold",
-                                     foreground="#000000",
+                                     foreground=text_color,
                                      relief="solid",
                                      text=text)
 
     def draw_command_button(self):
+        label_bg_color = "#BBADA0"
+        label_text_color = "#663300"
         self.Button_ai_play = tk.Button(self.top)
         self.Button_ai_play.place(x=580, y=370, height=28, width=49)
         self.Button_ai_play.configure(activebackground="#793e3e", activeforeground="#793e3e",
-                                      background="#b16363", compound='left', disabledforeground="#a3a3a3",
-                                      foreground="#000000",
+                                      background=label_bg_color, compound='left', disabledforeground="#a3a3a3",
+                                      foreground=label_text_color,
                                       highlightbackground="#d9d9d9",
                                       highlightcolor="black",
                                       pady="0",
@@ -158,8 +149,8 @@ class TkGUI2048(object):
         self.Button_exit = tk.Button(self.top)
         self.Button_exit.place(x=510, y=370, height=28, width=49)
         self.Button_exit.configure(activebackground="#793e3e", activeforeground="#793e3e",
-                                   background="#b16363", compound='left', disabledforeground="#a3a3a3",
-                                   foreground="#000000",
+                                   background=label_bg_color, compound='left', disabledforeground="#a3a3a3",
+                                   foreground=label_text_color,
                                    highlightbackground="#d9d9d9",
                                    highlightcolor="black",
                                    pady="0",
@@ -170,8 +161,8 @@ class TkGUI2048(object):
         self.Button_reset = tk.Button(self.top)
         self.Button_reset.place(x=440, y=370, height=28, width=49)
         self.Button_reset.configure(activebackground="#793e3e", activeforeground="#793e3e",
-                                    background="#b16363", compound='left', disabledforeground="#a3a3a3",
-                                    foreground="#000000",
+                                    background=label_bg_color, compound='left', disabledforeground="#a3a3a3",
+                                    foreground=label_text_color,
                                     highlightbackground="#d9d9d9",
                                     highlightcolor="black",
                                     pady="0",
@@ -182,8 +173,8 @@ class TkGUI2048(object):
         self.Button_up = tk.Button(self.top)
         self.Button_up.place(x=470, y=150, height=28, width=49)
         self.Button_up.configure(activebackground="beige", activeforeground="black",
-                                 background="#b16363", compound='left', cursor="fleur",
-                                 foreground="#000000", highlightbackground="#d9d9d9",
+                                 background=label_bg_color, compound='left', cursor="fleur",
+                                 foreground=label_text_color, highlightbackground="#d9d9d9",
                                  highlightcolor="black", pady="0", text='''上''',
                                  command=lambda: self.thread_it(self.play_up)
                                  )
@@ -191,16 +182,16 @@ class TkGUI2048(object):
         self.Button_down = tk.Button(self.top)
         self.Button_down.place(x=470, y=250, height=28, width=49)
         self.Button_down.configure(activebackground="beige", activeforeground="black",
-                                   background="#b16363", compound='left', cursor="fleur",
-                                   foreground="#000000", highlightbackground="#d9d9d9",
+                                   background=label_bg_color, compound='left', cursor="fleur",
+                                   foreground=label_text_color, highlightbackground="#d9d9d9",
                                    highlightcolor="black", pady="0", text='''下''',
                                    command=lambda: self.thread_it(self.play_down))
 
         self.Button_left = tk.Button(self.top)
         self.Button_left.place(x=430, y=200, height=28, width=49)
         self.Button_left.configure(activebackground="beige", activeforeground="black",
-                                   background="#b16363", compound='left', cursor="fleur",
-                                   foreground="#000000", highlightbackground="#d9d9d9",
+                                   background=label_bg_color, compound='left', cursor="fleur",
+                                   foreground=label_text_color, highlightbackground="#d9d9d9",
                                    highlightcolor="black", pady="0", text='''左''',
                                    command=lambda: self.thread_it(self.play_left)
                                    )
@@ -208,8 +199,8 @@ class TkGUI2048(object):
         self.Button_right = tk.Button(self.top)
         self.Button_right.place(x=520, y=200, height=28, width=49)
         self.Button_right.configure(activebackground="beige", activeforeground="black",
-                                    background="#b16363", compound='left', cursor="fleur",
-                                    foreground="#000000", highlightbackground="#d9d9d9",
+                                    background=label_bg_color, compound='left', cursor="fleur",
+                                    foreground=label_text_color, highlightbackground="#d9d9d9",
                                     highlightcolor="black", pady="0", text='''右''',
                                     command=lambda: self.thread_it(self.play_right)
                                     )
@@ -224,6 +215,8 @@ class TkGUI2048(object):
         self.Label_keyboard_event.bind('<Key>', self.play_keyboard)
 
     def draw_records(self, cur_num=0, move_num=-1):
+        label_bg_color = "#BBADA0"
+        label_text_color = "#663300"
         if cur_num:
             self.cur_num = cur_num
         if move_num != -1:
@@ -231,21 +224,21 @@ class TkGUI2048(object):
 
         self.Label_max = tk.Label(self.top)
         self.Label_max.place(x=430, y=10, height=33, width=80)
-        self.Label_max.configure(anchor='w', background="#b16363", compound='left',
+        self.Label_max.configure(anchor='w', background=label_bg_color, compound='left',
                                  cursor="fleur", disabledforeground="#a3a3a3",
-                                 foreground="#000000", text=f'''最高：{str(self.max_num)}''')
+                                 foreground=label_text_color, text=f'''最高：{str(self.max_num)}''')
 
         self.Label_cur = tk.Label(self.top)
         self.Label_cur.place(x=430, y=60, height=33, width=80)
-        self.Label_cur.configure(anchor='w', background="#b16363", compound='left',
+        self.Label_cur.configure(anchor='w', background=label_bg_color, compound='left',
                                  cursor="fleur", disabledforeground="#a3a3a3",
-                                 foreground="#000000", text=f'''当前：{str(self.cur_num)}''')
+                                 foreground=label_text_color, text=f'''当前：{str(self.cur_num)}''')
 
         self.Label_move = tk.Label(self.top)
         self.Label_move.place(x=430, y=110, height=33, width=80)
-        self.Label_move.configure(anchor='w', background="#b16363", compound='left',
+        self.Label_move.configure(anchor='w', background=label_bg_color, compound='left',
                                   cursor="fleur", disabledforeground="#a3a3a3",
-                                  foreground="#000000", text=f'''移动：{str(self.move_num)}''')
+                                  foreground=label_text_color, text=f'''移动：{str(self.move_num)}''')
 
     def run(self):
         self.top.mainloop()
