@@ -1,0 +1,261 @@
+<html>
+    <head>
+        <style>
+              .table-container {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 80vh; /* 可以根据需要调整容器的高度 */
+              }
+              html {
+                background-color: #EEE9E9;
+              }
+              table {
+                border-radius: 10px;
+                background-color: #CDC9A5;
+              }
+              td {
+                border-radius: 10px;
+                padding: 10px;
+                border: 5px solid #ccc;
+                height: 90px;
+                width: 80px;
+                background-color: #CDC9A5;
+                text-align: center;
+                font-family: Arial, sans-serif;
+                font-size: 56px;
+                font-weight: bold;
+                color: #333;
+            }
+            button {
+                font-family: Arial, sans-serif;
+                font-size: 30px;
+                font-weight: bold;
+            }
+            .arrow {
+                font-family: Arial, sans-serif;
+                font-size: 30px;
+                font-weight: bold;
+            }
+        </style>
+        <script>
+            var tool = {
+                random_int: function(min, max) {
+                    var random = Math.random();
+                    var range = max - min + 1;
+                    var random_number = Math.floor(random * range) + min;
+                    return random_number;
+                },
+                sample: function(array, count) {
+                    var random_items = [];
+                    var copy_array = array.slice();
+                    for (i=0; i<count; i++) {
+                        var random_idx = Math.floor(Math.random() * copy_array.length);
+                        var random_item = copy_array.splice(random_idx, 1)[0];
+                        random_items.push(random_item);
+                    }
+                    return random_items;
+                }
+            }
+        </script>
+        <script>
+            var config = {row: 3, col: 3, range_amount: [1, 2],
+                          random_numbers: [2, 4]};
+            var board = [];
+            var direction = {up: 'W', down: 'S', left: 'A', right: 'D'};
+            var key_dir_map = {38: direction.up, 40: direction.down,
+                37: direction.left, 39: direction.right};
+            var color_map = {
+            '': {'color': '#CDC9A5', 'background-color': '#CDC9A5'},
+            2: {'color': '#696969', 'background-color': '#FFFAF0'},
+            4: {'color': '#696969', 'background-color': '#EEE685'},
+            8: {'color': '#FFFFFF', 'background-color': '#F4A460'},
+            16: {'color': '#FFFFFF', 'background-color': '#FFA07A'},
+            32: {'color': '#FFFFFF', 'background-color': '#FF6347'},
+            64: {'color': '#FFFFFF', 'background-color': '#FA8072'},
+            128: {'color': '#FFFFFF', 'background-color': '#EEDD82'},
+            256: {'color': '#FFFFFF', 'background-color': '#FFB570'},
+            512: {'color': '#FFFFFF', 'background-color': '#FF8C00'},
+            1024: {'color': '#FFFFFF', 'background-color': '#FF6347'},
+            2048: {'color': '#FFFFFF', 'background-color': '#FF4500'},
+            4096: {'color': '#FFFFFF', 'background-color': '#8B2252'}};
+
+            function init() {
+                var row_html = [];
+                for (i=0; i<config["row"]; i++) {
+                    row = "<tr>";
+                    r = []
+                    for (j=0; j<config["col"]; j++) {
+                        r.push([i, j])
+                        row += `<td id="${'cell_'+i+j}"></td>`
+                    }
+                    board.push(r)
+                    row += "</tr>"
+                    row_html.push(row)
+                }
+                board_html = row_html.join('\n');
+                document.querySelector("#board").innerHTML = board_html
+            }
+
+            function get_cell_element(pos) {
+                var row = pos[0]; var col = pos[1];
+                return document.querySelector(`#${"cell_"+row+col}`)
+            }
+
+            function get_cell_value(pos) {
+                return get_cell_element(pos).innerText
+            }
+            function set_cell_value(pos, value) {
+                get_cell_element(pos).innerText = value
+            }
+
+            function fill(init=false) {
+                var empty_pos = [];
+                for (i=0; i<config["row"]; i++) {
+                    for (j=0; j<config["col"]; j++) {
+                        if (get_cell_value([i, j]) == '')
+                        empty_pos.push([i, j]);
+                    }
+                }
+                random_amount = tool.random_int(config.range_amount[0], config.range_amount[1]);
+                fill_pos = tool.sample(empty_pos, Math.min(empty_pos.length, random_amount));
+                fill_pos.forEach(function(item) {
+                    set_cell_value(item, tool.sample(config.random_numbers, 1)[0]);
+                    if (init) change_color(get_cell_element(item));
+                });
+            }
+
+            function _merge_move(board_row, pos_or_neg) {
+                length = board_row.length
+                if (pos_or_neg) {
+                    var i = 0; step = 1; move_at = 0;
+                } else {
+                    var i = length - 1; step = -1; move_at = length - 1;
+                }
+
+                while (pos_or_neg ? i < length : i>=0) {
+                    if (get_cell_value(board_row[i]) == '') {
+                        i += step;
+                        continue;
+                    }
+                    meet = false; meet_idx = i; match = false;
+                    if (pos_or_neg) {
+                        for (var j=i+1; j < length; j++) {
+                            meet_idx = j;
+                            if (get_cell_value(board_row[j]) == '') continue;
+                            meet = true;
+                            if (get_cell_value(board_row[j]) == get_cell_value(board_row[i]))
+                                match = true;
+                            break;
+                        }
+                    } else {
+                        for (var j=i-1; j > -1; j--) {
+                            meet_idx = j;
+                            if (get_cell_value(board_row[j]) == '') continue;
+                            meet = true;
+                            if (get_cell_value(board_row[j]) == get_cell_value(board_row[i]))
+                                match = true;
+                            break;
+                        }
+                    }
+                    cur_idx = i;
+                    if (meet && match) {
+                        set_cell_value(board_row[i], parseInt(get_cell_value(board_row[i])) * 2);
+                        set_cell_value(board_row[meet_idx], '');
+                        i = meet_idx + step;
+                    } else if (meet && !match) {i = meet_idx} else {i += step}
+                    if (get_cell_value(board_row[move_at]) != get_cell_value(board_row[cur_idx])) {
+                            set_cell_value(board_row[move_at], get_cell_value(board_row[cur_idx]))
+                            set_cell_value(board_row[cur_idx], '')
+                        }
+                    move_at += step
+                }
+            }
+
+            function merge_move(dir) {
+                pos_or_neg = false
+                trans = false
+                if ([direction.left, direction.up].includes(dir))
+                    pos_or_neg = true
+                if ([direction.down, direction.up].includes(dir))
+                    trans = true
+                if (!trans) {
+                    board.forEach(function(item) {
+                        _merge_move(item, pos_or_neg)
+                    })
+                } else {
+                    for (var j=0; j<config.col; j++) {
+                        col_to_row = [];
+                        for (var i=0; i<config.row; i++) {
+                            col_to_row.push([i, j])
+                        }
+                        _merge_move(col_to_row, pos_or_neg)
+                    }
+                }
+            }
+
+            function change(direction) {
+                merge_move(direction);
+                fill();
+            }
+
+            function change_color(e) {
+                if (color_map[e.innerText] != undefined) {
+                    color_info = color_map[e.innerText];
+                    e.setAttribute('style', `color: ${color_info["color"]};
+                    background-color: ${color_info["background-color"]}`);
+                }
+            }
+
+            function watch() {
+                var target = document.querySelector("#board");
+                var observer = new MutationObserver(function(mutation_list, observer) {
+                    mutation_list.forEach(function(item) {
+                        if (item['target'].getAttribute('id').startsWith('cell_')) {
+                            change_color(item['target']);
+                        }
+                    })
+                })
+                var config = {childList: true, subtree: true};
+                observer.observe(target, config);
+            }
+
+            window.onload = function() {
+                init();
+                fill(init=true);
+                watch();
+            }
+            document.addEventListener('keydown', function(event) {
+                  // 获取按下的键码
+                  var key_code = event.keyCode || event.which;
+                  dir = key_dir_map[key_code];
+                  if (dir == undefined)
+                    return;
+                  change(dir);
+            });
+
+            function test() {
+                e = document.querySelector("#cell_00");
+                e.setAttribute('style', 'color: #F8F8FF; background-color: #FFEBCD');
+            }
+
+        </script>
+    </head>
+    <body>
+        <div class="table-container">
+            <table id="board">
+                <tr><td></td><td>2</td><td></td><td></td></tr>
+                <tr><td></td><td></td><td>4</td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td></tr>
+            </table>
+        </div>
+        <div onclick="test()" style="display: none">Test</div>
+<!--        <div onclick="change('W')" class="arrow">&nbsp;&nbsp;&#x25B2;</div>-->
+<!--        <div style="display: flex;">-->
+<!--            <div onclick="change('A')" class="arrow">&#x25C0;</div>-->
+<!--            <div onclick="change('D')" class="arrow">&nbsp;&nbsp;&#x25B6;</div>-->
+<!--        </div>-->
+<!--        <div onclick="change('S')" class="arrow">&nbsp;&nbsp;&#x25BC;</div>-->
+    </body>
+</html>
